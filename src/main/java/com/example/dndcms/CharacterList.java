@@ -1,7 +1,7 @@
 /**
  * Jacob Whitney
  * Software Development I
- * February 23, 2025
+ * March 12, 2025
  * CharacterList.java
  * Description: manages list of Character objects
  * to be viewed or edited.

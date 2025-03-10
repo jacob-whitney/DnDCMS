@@ -1,7 +1,7 @@
 /**
  * Jacob Whitney
  * Software Development I
- * February 23, 2025
+ * March 12, 2025
  * Character.java
  * Description: contains attributes and methods for
  * creating and updating Character objects.
