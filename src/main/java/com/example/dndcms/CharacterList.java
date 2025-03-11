@@ -132,7 +132,10 @@ public class CharacterList {
                 while (loop) {
                     switch (attribute) {
                         case "id", "ID":
-                            int updateId = IPO.getValidId(value, list);
+                            int updateId = 0;
+                            if (IPO.getValidId(value, list)) {
+                                updateId = Integer.parseInt(value);
+                            }
                             c.setId(updateId);
                             System.out.println("Character " + id + "'s ID updated to " + updateId);
                             loop = false;

@@ -134,7 +134,10 @@ public class IPO {
      */
     public static Character parseAttributesFromString(String line, CharacterList list) {
         String[] attributes = line.split(", ");
-        int id = getValidId(attributes[0], list);
+        int id = 0;
+        if (getValidId(attributes[0], list)) {
+            id = Integer.parseInt(attributes[0]);
+        }
         String name = getValidName(attributes[1], list);
         String classification = getValidClassification(attributes[2]);
         String race = getValidRace(attributes[3]);
@@ -310,19 +313,16 @@ public class IPO {
      *            validated completely and is ready
      *            to be submitted to new Character
      */
-    public static int getValidId(String id, CharacterList list) {
-        while (true) {
-            if (validateId(id)) {
-                if (checkDuplicateIds(id, list)) {
-                    break;
-                } else {
-                    id = inputAttribute("id");
-                }
+    public static boolean getValidId(String id, CharacterList list) {
+        if (validateId(id)) {
+            if (checkDuplicateIds(id, list)) {
+                return true;
             } else {
-                id = inputAttribute("id");
+                return false;
             }
+        } else {
+            return false;
         }
-        return Integer.parseInt(id);
     }
 
     /**

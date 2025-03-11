@@ -26,6 +26,7 @@ import java.io.IOException;
 
 public class DnDCMSApp extends Application {
     private CharacterApp characterApp;
+    private CharacterList characterList = new CharacterList();
 
     @Override
     public void start(Stage primaryStage) throws IOException {
