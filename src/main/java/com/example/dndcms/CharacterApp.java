@@ -33,6 +33,8 @@ import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
+import static com.example.dndcms.IPO.*;
+
 public class CharacterApp {
     private static CharacterList characterList = new CharacterList();
     private static Stage primaryStage;
@@ -114,7 +116,7 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of updating a character
      */
-    public static void showDeleteCharacterScene() {
+    public static void showDeleteCharacterScene() { // Probably not a scene, just delete from table
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
         flowPane.getChildren().addAll(getHeader());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
@@ -364,6 +366,8 @@ public class CharacterApp {
         fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files (*.txt", "*.txt"));
         item.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent event) {
+                errorMessage.getChildren().clear();
+                int success = 0;
                 File selectedFile = fileChooser.showOpenDialog(primaryStage);
                 if (selectedFile != null) {
                     String charLine = "";
@@ -372,18 +376,32 @@ public class CharacterApp {
                     for (int i = 0; i < fileData.size(); i++) {
                         charLine = fileData.get(i);
                         if (validateImportedString(charLine)) {
-                            Text line = new Text(charLine);
-                            errorMessage.getChildren().add(line);
-                            //characterList.addCharacter(parseAttributesFromString(charLine));
+                            String[] attributes = charLine.split(", ");
+                            if (
+                                    validateId(attributes[0]) &&
+                                    validateName(attributes[1]) &&
+                                    validateClass(attributes[2]) &&
+                                    validateRace(attributes[3]) &&
+                                    validateAbilityScore("Strength", attributes[4]) &&
+                                    validateAbilityScore("Dexterity", attributes[5]) &&
+                                    validateAbilityScore("Constitution", attributes[6])
+                            ){
+                                characterList.addCharacter(parseAttributesFromString(charLine));
+                                success++;
+                            } else {
+                                Text invString = new Text("> for the following line:\n\t" + charLine + "\n");
+                                errorMessage.getChildren().add(invString);
+                            }
                         } else {
                             Text invLine = new Text("> Exactly 7 attributes must be present, this line will be skipped:\n\t" + charLine + "\n");
                             errorMessage.getChildren().add(invLine);
                         }
                     }
-                    //showCharacterListScene();
                 } else {
                     errorMessage.getChildren().add(invFile);
                 }
+                Text successImport = new Text("* " +success + " characters imported!\n");
+                errorMessage.getChildren().add(successImport);
             }
         });
 
@@ -391,8 +409,11 @@ public class CharacterApp {
         chooseFileButton.setTranslateX(3);
         chooseFileButton.setTranslateY(3);
 
-        Button cancelButton = new Button("Cancel");
-        cancelButton.setOnMouseClicked((new EventHandler<MouseEvent>() {
+        FlowPane buttonPane = new FlowPane(Orientation.HORIZONTAL);
+        buttonPane.getChildren().addAll(chooseFileButton, fileName);
+
+        Button backButton = new Button("Go Back");
+        backButton.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
                 showCharacterListScene();
             }
@@ -401,9 +422,8 @@ public class CharacterApp {
         FlowPane formPane = new FlowPane(Orientation.VERTICAL);
         formPane.getChildren().addAll(
                 fileLabel,
-                chooseFileButton,
-                fileName,
-                cancelButton
+                buttonPane,
+                backButton
         );
 
         return formPane;
@@ -441,27 +461,16 @@ public class CharacterApp {
      */
     public static Character parseAttributesFromString(String line) {
         String[] attributes = line.split(", ");
-        if (
-                validateId(attributes[0]) &&
-                validateName(attributes[1]) &&
-                validateClass(attributes[2]) &&
-                validateRace(attributes[3]) &&
-                validateAbilityScore("Strength", attributes[4]) &&
-                validateAbilityScore("Dexterity", attributes[5]) &&
-                validateAbilityScore("Constitution", attributes[6])
-        ){
-            int id = Integer.parseInt(attributes[0]);
-            String name = attributes[1];
-            String classification = attributes[2];
-            String race = attributes[3];
-            int str = Integer.parseInt(attributes[4]);
-            int dex = Integer.parseInt(attributes[5]);
-            int con = Integer.parseInt(attributes[6]);
 
-            return new Character(id, name, classification, race, str, dex, con);
-        } else {
-            return null;
-        }
+        int id = Integer.parseInt(attributes[0]);
+        String name = attributes[1];
+        String classification = attributes[2];
+        String race = attributes[3];
+        int str = Integer.parseInt(attributes[4]);
+        int dex = Integer.parseInt(attributes[5]);
+        int con = Integer.parseInt(attributes[6]);
+
+        return new Character(id, name, classification, race, str, dex, con);
     }
 
     // Validation Methods
@@ -480,6 +489,7 @@ public class CharacterApp {
             return true;
         }
     }
+
     /**
      * method: validateId
      * parameters: id
@@ -489,9 +499,9 @@ public class CharacterApp {
     public static boolean validateId(String id) {
         int listId = 0;
         int listSize = characterList.getListSize();
-        Text dupId = new Text("> Invalid ID: " + id + ", already exists, please enter a new one");
-        Text posInt = new Text("> Invalid ID: Please enter a positive integer");
-        Text nonIntId = new Text("> Invalid ID: Please enter an integer");
+        Text dupId = new Text("> Invalid ID: " + id + ", already exists, please enter a new one\n");
+        Text posInt = new Text("> Invalid ID: Please enter a positive integer\n");
+        Text nonIntId = new Text("> Invalid ID: Please enter an integer\n");
         errorMessage.getChildren().clear();
 
         // Check that it's integer
@@ -527,9 +537,9 @@ public class CharacterApp {
     public static boolean validateName(String name) {
         String listName = "";
         int listSize = characterList.getListSize();
-        Text dupName = new Text("> Invalid Name: " + name + ", already exists, please enter a new one");
-        Text moreChar = new Text("> Invalid Name: Please enter a name with 2 characters or more");
-        Text lessChar = new Text("> Invalid Name: Please enter a name with 50 characters or fewer");
+        Text dupName = new Text("> Invalid Name: " + name + ", already exists, please enter a new one\n");
+        Text moreChar = new Text("> Invalid Name: Please enter a name with 2 characters or more\n");
+        Text lessChar = new Text("> Invalid Name: Please enter a name with 50 characters or fewer\n");
         errorMessage.getChildren().clear();
 
         if (name.length() < 2) {
@@ -558,22 +568,22 @@ public class CharacterApp {
      * purpose: Confirms that Class is a valid string
      */
     public static boolean validateClass(String classification) {
-        Text invClass = new Text("> Invalid Class: Choose Barbarian, Fighter, Ranger, Rogue, Sorcerer, Warlock, or Wizard");
+        Text invClass = new Text("> Invalid Class: Choose Barbarian, Fighter, Ranger, Rogue, Sorcerer, Warlock, or Wizard\n");
         errorMessage.getChildren().clear();
 
         if (
-                classification != "Barbarian" ||
-                classification != "Fighter" ||
-                classification != "Ranger" ||
-                classification != "Rogue" ||
-                classification != "Sorcerer" ||
-                classification != "Warlock" ||
-                classification != "Wizard"
+                classification.equals("Barbarian") ||
+                classification.equals("Fighter") ||
+                classification.equals("Ranger") ||
+                classification.equals("Rogue") ||
+                classification.equals("Sorcerer") ||
+                classification.equals("Warlock") ||
+                classification.equals("Wizard")
         ) {
+            return true;
+        } else {
             errorMessage.getChildren().add(invClass);
             return false;
-        } else {
-            return true;
         }
     }
 
@@ -584,21 +594,21 @@ public class CharacterApp {
      * purpose: Confirms that Race is a valid string
      */
     public static boolean validateRace(String race) {
-        Text invRace = new Text("> Invalid Race: Choose Dwarf, Dragonborn, Elf, Gnome, Halflin, or Human");
+        Text invRace = new Text("> Invalid Race: Choose Dwarf, Dragonborn, Elf, Gnome, Halflin, or Human\n");
         errorMessage.getChildren().clear();
 
         if (
-                race != "Dwarf" ||
-                race != "Dragonborn" ||
-                race != "Elf" ||
-                race != "Gnome" ||
-                race != "Halfling" ||
-                race != "Human"
+                race.equals("Dwarf") ||
+                race.equals("Dragonborn") ||
+                race.equals("Elf") ||
+                race.equals("Gnome") ||
+                race.equals("Halfling") ||
+                race.equals("Human")
         ) {
+            return true;
+        } else {
             errorMessage.getChildren().add(invRace);
             return false;
-        } else {
-            return true;
         }
     }
 
@@ -610,9 +620,9 @@ public class CharacterApp {
      * is valid integer
      */
     public static boolean validateAbilityScore(String ability, String score) {
-        Text nonInt = new Text("> Invalid " + ability + ": Please enter an integer");
-        Text tooSmall = new Text("> Invalid " + ability + ": Please enter a score of 3 or more");
-        Text tooBig = new Text("> Invalid " + ability + ": Please enter a score of 20 or less");
+        Text nonInt = new Text("> Invalid " + ability + ": Please enter an integer\n");
+        Text tooSmall = new Text("> Invalid " + ability + ": Please enter a score of 3 or more\n");
+        Text tooBig = new Text("> Invalid " + ability + ": Please enter a score of 20 or less\n");
         errorMessage.getChildren().clear();
         try {
             int intScore = Integer.parseInt(score);
@@ -639,7 +649,7 @@ public class CharacterApp {
      * have a radio button selected
      */
     public static boolean validateToggleGroup(String attribute, ToggleGroup toggleGroup) {
-        Text unselected = new Text("> Invalid " + attribute + ": Please select one");
+        Text unselected = new Text("> Invalid " + attribute + ": Please select one\n");
         errorMessage.getChildren().clear();
 
         if (toggleGroup.getSelectedToggle() == null) {
