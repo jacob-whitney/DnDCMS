@@ -12,6 +12,7 @@ package com.example.dndcms;
 // Imports
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -23,17 +24,23 @@ import javafx.scene.layout.FlowPane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
+import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ArrayList;
+import java.util.Scanner;
+
 public class CharacterApp {
-    private CharacterList characterList = new CharacterList();
-    private Stage primaryStage;
+    private static CharacterList characterList = new CharacterList();
+    private static Stage primaryStage;
     private Group root = new Group();
     private ObservableList rootList = root.getChildren();
-    private int sceneWidth = 1600;
-    private int sceneHeight = 900;
-    private TextFlow errorMessage = new TextFlow();
+    private static int sceneWidth = 1600;
+    private static int sceneHeight = 900;
+    private static TextFlow errorMessage = new TextFlow();
 
     // Constructors
     public CharacterApp(Stage primaryStage) {
@@ -47,7 +54,7 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of list of characters
      */
-    public void showCharacterListScene() {
+    public static void showCharacterListScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
         flowPane.getChildren().addAll(getHeader(), getCharacterTable(), getCharacterInteractButtons());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
@@ -62,7 +69,7 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of new Character form
      */
-    public void showNewCharacterScene() {
+    public static void showNewCharacterScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
         flowPane.getChildren().addAll(getHeader(), errorMessage, getCharacterForm());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
@@ -77,9 +84,9 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of importing new characters
      */
-    public void showImportCharactersScene() {
+    public static void showImportCharactersScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.getChildren().addAll(getHeader());
+        flowPane.getChildren().addAll(getHeader(), errorMessage, getImportForm());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
         primaryStage.setTitle("Import Characters");
         primaryStage.setScene(scene);
@@ -92,7 +99,7 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of updating a character
      */
-    public void showUpdateCharacterScene() {
+    public static void showUpdateCharacterScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
         flowPane.getChildren().addAll(getHeader(), getCharacterForm());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
@@ -107,7 +114,7 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of updating a character
      */
-    public void showDeleteCharacterScene() {
+    public static void showDeleteCharacterScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
         flowPane.getChildren().addAll(getHeader());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
@@ -123,7 +130,7 @@ public class CharacterApp {
      * return: Text
      * purpose: Create elements for header of every scene
      */
-    public Text getHeader() {
+    public static Text getHeader() {
         Text title = new Text();
         title.setText("Dungeons & Dragons\nCharacter Creator");
         return title;
@@ -136,7 +143,7 @@ public class CharacterApp {
      * purpose: Create elements for list of characters
      * within a table
      */
-    public TableView getCharacterTable() {
+    public static TableView getCharacterTable() {
         ObservableList<Character> observableCharacterList = FXCollections.observableArrayList();
 
         if (characterList.getListSize() > 0) {
@@ -175,7 +182,7 @@ public class CharacterApp {
      * purpose: Create row of buttons for users
      * to interact with characters
      */
-    public FlowPane getCharacterInteractButtons() {
+    public static FlowPane getCharacterInteractButtons() {
         Button create = new Button("Create");
         create.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
@@ -211,10 +218,10 @@ public class CharacterApp {
      * method: getCharacterForm
      * parameters: list
      * return: FlowPane
-     * purpose: Create row of buttons for users
-     * to submit changes to a character or cancel
+     * purpose: Create form for getting Character
+     * attributes via user input
      */
-    public FlowPane getCharacterForm() {
+    public static FlowPane getCharacterForm() {
         Label idLabel = new Label("ID");
         TextField idField = new TextField();
         Label nameLabel = new Label("Name");
@@ -333,14 +340,153 @@ public class CharacterApp {
         return formPane;
     }
 
-    // Validation
+    /**
+     * method: getImportForm
+     * parameters: none
+     * return: MenuBar
+     * purpose: Create form for users to
+     * import text file of Characters
+     */
+    public static FlowPane getImportForm() {
+        Text invFile = new Text("> No valid file selected, try again");
+        errorMessage.getChildren().clear();
+
+        Label fileLabel = new Label("Upload");
+
+        Text fileName = new Text("No file selected");
+
+        Menu fileMenu = new Menu("Choose File");
+        MenuItem item = new MenuItem("Open Text File");
+        fileMenu.getItems().add(item);
+
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Open File");
+        fileChooser.getExtensionFilters().addAll(new FileChooser.ExtensionFilter("Text Files (*.txt", "*.txt"));
+        item.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent event) {
+                File selectedFile = fileChooser.showOpenDialog(primaryStage);
+                if (selectedFile != null) {
+                    String charLine = "";
+                    fileName.setText(selectedFile.getName());
+                    ArrayList<String> fileData = readFile(selectedFile);
+                    for (int i = 0; i < fileData.size(); i++) {
+                        charLine = fileData.get(i);
+                        if (validateImportedString(charLine)) {
+                            Text line = new Text(charLine);
+                            errorMessage.getChildren().add(line);
+                            //characterList.addCharacter(parseAttributesFromString(charLine));
+                        } else {
+                            Text invLine = new Text("> Exactly 7 attributes must be present, this line will be skipped:\n\t" + charLine + "\n");
+                            errorMessage.getChildren().add(invLine);
+                        }
+                    }
+                    //showCharacterListScene();
+                } else {
+                    errorMessage.getChildren().add(invFile);
+                }
+            }
+        });
+
+        MenuBar chooseFileButton = new MenuBar(fileMenu);
+        chooseFileButton.setTranslateX(3);
+        chooseFileButton.setTranslateY(3);
+
+        Button cancelButton = new Button("Cancel");
+        cancelButton.setOnMouseClicked((new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent event) {
+                showCharacterListScene();
+            }
+        }));
+
+        FlowPane formPane = new FlowPane(Orientation.VERTICAL);
+        formPane.getChildren().addAll(
+                fileLabel,
+                chooseFileButton,
+                fileName,
+                cancelButton
+        );
+
+        return formPane;
+    }
+
+    // Processor Methods
+    /**
+     * method: readFile
+     * parameters: file
+     * return: ArrayList<String>
+     * purpose: Read a file into an ArrayList of
+     * Strings
+     */
+    public static ArrayList<String> readFile(File file) {
+        ArrayList<String> fileData = new ArrayList<String>();
+        try {
+            Scanner scanner = new Scanner(file);
+
+            while (scanner.hasNextLine()) {
+                fileData.add(scanner.nextLine());
+            }
+            scanner.close();
+        } catch (FileNotFoundException e) {
+            System.out.println("> File not found");
+        }
+        return fileData;
+    }
+
+    /**
+     * method: parseAttributesFromString
+     * parameters: line
+     * return: Character
+     * purpose: Parses a String from an imported file
+     *            into attributes and returns a new Character
+     */
+    public static Character parseAttributesFromString(String line) {
+        String[] attributes = line.split(", ");
+        if (
+                validateId(attributes[0]) &&
+                validateName(attributes[1]) &&
+                validateClass(attributes[2]) &&
+                validateRace(attributes[3]) &&
+                validateAbilityScore("Strength", attributes[4]) &&
+                validateAbilityScore("Dexterity", attributes[5]) &&
+                validateAbilityScore("Constitution", attributes[6])
+        ){
+            int id = Integer.parseInt(attributes[0]);
+            String name = attributes[1];
+            String classification = attributes[2];
+            String race = attributes[3];
+            int str = Integer.parseInt(attributes[4]);
+            int dex = Integer.parseInt(attributes[5]);
+            int con = Integer.parseInt(attributes[6]);
+
+            return new Character(id, name, classification, race, str, dex, con);
+        } else {
+            return null;
+        }
+    }
+
+    // Validation Methods
+    /**
+     * method: validateImportedString
+     * parameters: line
+     * return: boolean
+     * purpose: Confirms that String from imported
+     * file has 7 attributes exactly
+     */
+    public static boolean validateImportedString(String line) {
+        String[] data = line.split(", ");
+        if (data.length != 7) {
+            return false;
+        } else {
+            return true;
+        }
+    }
     /**
      * method: validateId
      * parameters: id
      * return: boolean
      * purpose: Confirms that ID is a valid integer
      */
-    public boolean validateId(String id) {
+    public static boolean validateId(String id) {
         int listId = 0;
         int listSize = characterList.getListSize();
         Text dupId = new Text("> Invalid ID: " + id + ", already exists, please enter a new one");
@@ -378,7 +524,7 @@ public class CharacterApp {
      * return: boolean
      * purpose: Confirms that Name is a valid string
      */
-    public boolean validateName(String name) {
+    public static boolean validateName(String name) {
         String listName = "";
         int listSize = characterList.getListSize();
         Text dupName = new Text("> Invalid Name: " + name + ", already exists, please enter a new one");
@@ -406,18 +552,50 @@ public class CharacterApp {
     }
 
     /**
-     * method: validateToggleGroup
-     * parameters: attribute, toggleGroup
+     * method: validateClass
+     * parameters: classification
      * return: boolean
-     * purpose: Confirms that toggleGroups
-     * have a radio button selected
+     * purpose: Confirms that Class is a valid string
      */
-    public boolean validateToggleGroup(String attribute, ToggleGroup toggleGroup) {
-        Text unselected = new Text("> Invalid " + attribute + ": Please select one");
+    public static boolean validateClass(String classification) {
+        Text invClass = new Text("> Invalid Class: Choose Barbarian, Fighter, Ranger, Rogue, Sorcerer, Warlock, or Wizard");
         errorMessage.getChildren().clear();
 
-        if (toggleGroup.getSelectedToggle() == null) {
-            errorMessage.getChildren().add(unselected);
+        if (
+                classification != "Barbarian" ||
+                classification != "Fighter" ||
+                classification != "Ranger" ||
+                classification != "Rogue" ||
+                classification != "Sorcerer" ||
+                classification != "Warlock" ||
+                classification != "Wizard"
+        ) {
+            errorMessage.getChildren().add(invClass);
+            return false;
+        } else {
+            return true;
+        }
+    }
+
+    /**
+     * method: validateRace
+     * parameters: race
+     * return: boolean
+     * purpose: Confirms that Race is a valid string
+     */
+    public static boolean validateRace(String race) {
+        Text invRace = new Text("> Invalid Race: Choose Dwarf, Dragonborn, Elf, Gnome, Halflin, or Human");
+        errorMessage.getChildren().clear();
+
+        if (
+                race != "Dwarf" ||
+                race != "Dragonborn" ||
+                race != "Elf" ||
+                race != "Gnome" ||
+                race != "Halfling" ||
+                race != "Human"
+        ) {
+            errorMessage.getChildren().add(invRace);
             return false;
         } else {
             return true;
@@ -431,7 +609,7 @@ public class CharacterApp {
      * purpose: Confirms that Ability Score
      * is valid integer
      */
-    public boolean validateAbilityScore(String ability, String score) {
+    public static boolean validateAbilityScore(String ability, String score) {
         Text nonInt = new Text("> Invalid " + ability + ": Please enter an integer");
         Text tooSmall = new Text("> Invalid " + ability + ": Please enter a score of 3 or more");
         Text tooBig = new Text("> Invalid " + ability + ": Please enter a score of 20 or less");
@@ -450,6 +628,25 @@ public class CharacterApp {
         } catch (NumberFormatException e) {
             errorMessage.getChildren().add(nonInt);
             return false;
+        }
+    }
+
+    /**
+     * method: validateToggleGroup
+     * parameters: attribute, toggleGroup
+     * return: boolean
+     * purpose: Confirms that toggleGroups
+     * have a radio button selected
+     */
+    public static boolean validateToggleGroup(String attribute, ToggleGroup toggleGroup) {
+        Text unselected = new Text("> Invalid " + attribute + ": Please select one");
+        errorMessage.getChildren().clear();
+
+        if (toggleGroup.getSelectedToggle() == null) {
+            errorMessage.getChildren().add(unselected);
+            return false;
+        } else {
+            return true;
         }
     }
 }
