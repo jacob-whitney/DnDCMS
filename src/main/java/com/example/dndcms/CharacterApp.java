@@ -31,6 +31,7 @@ import javafx.scene.Scene;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.ArrayList;
+import java.util.List;
 import java.util.Scanner;
 
 import static com.example.dndcms.IPO.*;
@@ -38,7 +39,7 @@ import static com.example.dndcms.IPO.*;
 public class CharacterApp {
     private static CharacterList characterList = new CharacterList();
     private static Stage primaryStage;
-    private Group root = new Group();
+    private static Group root = new Group();
     private ObservableList rootList = root.getChildren();
     private static int sceneWidth = 1600;
     private static int sceneHeight = 900;
@@ -58,7 +59,7 @@ public class CharacterApp {
      */
     public static void showCharacterListScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.getChildren().addAll(getHeader(), getCharacterTable(), getCharacterInteractButtons());
+        flowPane.getChildren().addAll(getHeader(), errorMessage, getCharacterTable());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
         primaryStage.setTitle("D&D Character Creator");
         primaryStage.setScene(scene);
@@ -73,7 +74,7 @@ public class CharacterApp {
      */
     public static void showNewCharacterScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.getChildren().addAll(getHeader(), errorMessage, getCharacterForm());
+        flowPane.getChildren().addAll(getHeader(), errorMessage, getCharacterForm(null));
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
         primaryStage.setTitle("Create New Character");
         primaryStage.setScene(scene);
@@ -101,9 +102,9 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of updating a character
      */
-    public static void showUpdateCharacterScene() {
+    public static void showUpdateCharacterScene(Character character) {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.getChildren().addAll(getHeader(), getCharacterForm());
+        flowPane.getChildren().addAll(getHeader(), errorMessage, getCharacterForm(character));
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
         primaryStage.setTitle("Update Character");
         primaryStage.setScene(scene);
@@ -116,7 +117,7 @@ public class CharacterApp {
      * return: void
      * purpose: Shows scene of updating a character
      */
-    public static void showDeleteCharacterScene() { // Probably not a scene, just delete from table
+    public static void showDeleteCharacterScene() {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
         flowPane.getChildren().addAll(getHeader());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
@@ -126,6 +127,15 @@ public class CharacterApp {
     }
 
     // Get Nodes
+    /**
+     * method: getStyles
+     * parameters: none
+     * return: void
+     * purpose: Get styles for all scenes
+     */
+    public static void getStyles() {
+        root.setStyle("-fx-font-size: 16px;");
+    }
     /**
      * method: getHeader
      * parameters: none
@@ -141,11 +151,13 @@ public class CharacterApp {
     /**
      * method: getCharacterTable
      * parameters: none
-     * return: TableView
+     * return: FlowPane
      * purpose: Create elements for list of characters
      * within a table
      */
-    public static TableView getCharacterTable() {
+    public static FlowPane getCharacterTable() {
+        errorMessage.getChildren().clear();
+
         ObservableList<Character> observableCharacterList = FXCollections.observableArrayList();
 
         if (characterList.getListSize() > 0) {
@@ -174,17 +186,7 @@ public class CharacterApp {
 
         tableView.getColumns().addAll(idColumn, nameColumn, classificationColumn, raceColumn, strColumn, dexColumn, conColumn);
         tableView.setItems(observableCharacterList);
-        return tableView;
-    }
 
-    /**
-     * method: getCharacterInteractButtons
-     * parameters: list
-     * return: FlowPane
-     * purpose: Create row of buttons for users
-     * to interact with characters
-     */
-    public static FlowPane getCharacterInteractButtons() {
         Button create = new Button("Create");
         create.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
@@ -200,20 +202,42 @@ public class CharacterApp {
         Button update = new Button("Update");
         update.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
-                showUpdateCharacterScene();
+                errorMessage.getChildren().clear();
+                Character selectedCharacter = tableView.getSelectionModel().getSelectedItem();
+                if (selectedCharacter != null) {
+                    showUpdateCharacterScene(selectedCharacter);
+                } else {
+                    Text noneSelected = new Text("> No character selected\n");
+                    errorMessage.getChildren().add(noneSelected);
+                }
+
+
             }
         }));
         Button delete = new Button("Delete");
         delete.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
-                showDeleteCharacterScene();
+                errorMessage.getChildren().clear();
+                Character selectedChar = (Character) tableView.getSelectionModel().getSelectedItem();
+                if (selectedChar != null) {
+                    String id = String.valueOf(selectedChar.getId());
+                    characterList.deleteCharacter(id);
+                    showCharacterListScene();
+                } else {
+                    Text noneSelected = new Text("> No character selected\n");
+                    errorMessage.getChildren().add(noneSelected);
+                }
+                //showDeleteCharacterScene();
             }
         }));
 
         FlowPane buttonPane = new FlowPane(Orientation.HORIZONTAL);
         buttonPane.getChildren().addAll(create, importing, update, delete);
 
-        return buttonPane;
+        FlowPane tablePane = new FlowPane(Orientation.VERTICAL);
+        tablePane.getChildren().addAll(tableView, buttonPane);
+
+        return tablePane;
     }
 
     /**
@@ -223,7 +247,7 @@ public class CharacterApp {
      * purpose: Create form for getting Character
      * attributes via user input
      */
-    public static FlowPane getCharacterForm() {
+    public static FlowPane getCharacterForm(Character character) {
         Label idLabel = new Label("ID");
         TextField idField = new TextField();
         Label nameLabel = new Label("Name");
@@ -260,9 +284,6 @@ public class CharacterApp {
         raceHalfRB.setToggleGroup(raceGroup);
         RadioButton raceHumanRB = new RadioButton("Human");
         raceHumanRB.setToggleGroup(raceGroup);
-
-        Button customAction  = new Button("Roll Stats");
-
         Label strLabel = new Label("Strength");
         TextField strField = new TextField();
         Label dexLabel = new Label("Dexterity");
@@ -270,43 +291,168 @@ public class CharacterApp {
         Label conLabel = new Label("Constitution");
         TextField conField = new TextField();
 
-        Button submit = new Button("Submit");
-        submit.setOnMouseClicked((new EventHandler<MouseEvent>() {
+        Button customAction  = new Button("Roll Stats");
+        customAction.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
-                if (
-                        validateId(idField.getText()) &&
-                        validateName(nameField.getText()) &&
-                        validateToggleGroup("Class", classGroup) &&
-                        validateToggleGroup("Race", raceGroup) &&
-                        validateAbilityScore("Strength", strField.getText()) &&
-                        validateAbilityScore("Dexterity", dexField.getText()) &&
-                        validateAbilityScore("Constitution", conField.getText())
-                ){
-                    int id = Integer.parseInt(idField.getText());
-                    String name = nameField.getText();
-                    RadioButton classSelected = (RadioButton) classGroup.getSelectedToggle();
-                    String classification = classSelected.getText();
-                    RadioButton raceSelected = (RadioButton) raceGroup.getSelectedToggle();
-                    String race = raceSelected.getText();
-                    int str = Integer.parseInt(strField.getText());
-                    int dex = Integer.parseInt(dexField.getText());
-                    int con = Integer.parseInt(conField.getText());
+                strField.setText(String.valueOf(IPO.getRandomAbilityScore()));
+                dexField.setText(String.valueOf(IPO.getRandomAbilityScore()));
+                conField.setText(String.valueOf(IPO.getRandomAbilityScore()));
 
-                    characterList.addCharacter(new Character(id, name, classification, race, str, dex, con));
+            }
+        }));
+
+        FlowPane buttonPane = new FlowPane(Orientation.HORIZONTAL);
+
+        // Creating new character
+        if (character == null) {
+            Button submit = new Button("Submit");
+            submit.setOnMouseClicked((new EventHandler<MouseEvent>() {
+                public void handle(MouseEvent event) {
+                    errorMessage.getChildren().clear();
+                    if (
+                            validateId(idField.getText()) &&
+                            validateName(nameField.getText()) &&
+                            validateToggleGroup("Class", classGroup) &&
+                            validateToggleGroup("Race", raceGroup) &&
+                            validateAbilityScore("Strength", strField.getText()) &&
+                            validateAbilityScore("Dexterity", dexField.getText()) &&
+                            validateAbilityScore("Constitution", conField.getText())
+                    ) {
+                        int id = Integer.parseInt(idField.getText());
+                        String name = nameField.getText();
+                        RadioButton classSelected = (RadioButton) classGroup.getSelectedToggle();
+                        String classification = classSelected.getText();
+                        RadioButton raceSelected = (RadioButton) raceGroup.getSelectedToggle();
+                        String race = raceSelected.getText();
+                        int str = Integer.parseInt(strField.getText());
+                        int dex = Integer.parseInt(dexField.getText());
+                        int con = Integer.parseInt(conField.getText());
+
+                        characterList.addCharacter(new Character(id, name, classification, race, str, dex, con));
+                        showCharacterListScene();
+                    }
+
+                }
+            }));
+
+            Button cancel = new Button("Cancel");
+            cancel.setOnMouseClicked((new EventHandler<MouseEvent>() {
+                public void handle(MouseEvent event) {
                     showCharacterListScene();
                 }
+            }));
 
-            }
-        }));
+            buttonPane.getChildren().addAll(submit, cancel);
 
-        Button cancel = new Button("Cancel");
-        cancel.setOnMouseClicked((new EventHandler<MouseEvent>() {
-            public void handle(MouseEvent event) {
-                showCharacterListScene();
+        // Updating existing character
+        } else {
+            idField.setText(String.valueOf(character.getId()));
+            nameField.setText(character.getName());
+            switch (character.getClassification()) {
+                case "Barbarian":
+                    classGroup.selectToggle(classBarbRB);
+                    break;
+                case "Fighter":
+                    classGroup.selectToggle(classFightRB);
+                    break;
+                case "Ranger":
+                    classGroup.selectToggle(classRangRB);
+                    break;
+                case "Rogue":
+                    classGroup.selectToggle(classRogRB);
+                    break;
+                case "Sorcer":
+                    classGroup.selectToggle(classSorcRB);
+                    break;
+                case "Warlock":
+                    classGroup.selectToggle(classWarlRB);
+                    break;
+                case "Wizard":
+                    classGroup.selectToggle(classWizRB);
+                    break;
+                default:
+                    Text invChar = new Text("> Invalid Class: Select a new one\n");
+                    errorMessage.getChildren().add(invChar);
             }
-        }));
-        FlowPane buttonPane = new FlowPane(Orientation.HORIZONTAL);
-        buttonPane.getChildren().addAll(submit, cancel);
+            switch (character.getRace()) {
+                case "Dwarf":
+                    raceGroup.selectToggle(raceDwarfRB);
+                    break;
+                case "Dragonborn":
+                    raceGroup.selectToggle(raceDragRB);
+                    break;
+                case "Elf":
+                    raceGroup.selectToggle(raceElfRB);
+                    break;
+                case "Gnome":
+                    raceGroup.selectToggle(raceGnomeRB);
+                    break;
+                case "Halfling":
+                    raceGroup.selectToggle(raceHalfRB);
+                    break;
+                case "Human":
+                    raceGroup.selectToggle(raceHumanRB);
+                    break;
+                default:
+                    Text invRace = new Text("> Invalid Race: Select a new one\n");
+                    errorMessage.getChildren().add(invRace);
+            }
+            strField.setText(String.valueOf(character.getStr()));
+            dexField.setText(String.valueOf(character.getDex()));
+            conField.setText(String.valueOf(character.getCon()));
+
+            Button update = new Button("Update");
+            update.setOnMouseClicked((new EventHandler<MouseEvent>() {
+                public void handle(MouseEvent event) {
+                    errorMessage.getChildren().clear();
+                    if (!String.valueOf(character.getId()).equals(idField.getText())) {
+                        if (validateId(idField.getText())) {
+                            character.setId(Integer.parseInt(idField.getText()));
+                        }
+                    }
+                    if (!character.getName().equals(nameField.getText())) {
+                        if (validateName(nameField.getText())) {
+                            character.setName(nameField.getText());
+                        }
+                    }
+                    RadioButton classSelected = (RadioButton) classGroup.getSelectedToggle();
+                    if (!character.getClassification().equals(classSelected.getText())) {
+                        if (validateClass(classSelected.getText())) {
+                            character.setClassification(classSelected.getText());
+                        }
+                    }
+                    RadioButton raceSelected = (RadioButton) raceGroup.getSelectedToggle();
+                    if (!character.getRace().equals(raceSelected.getText())) {
+                        if (validateRace(raceSelected.getText())) {
+                            character.setRace(raceSelected.getText());
+                        }
+                    }
+                    if (!String.valueOf(character.getStr()).equals(strField.getText())) {
+                        if (validateAbilityScore("Strength", strField.getText())) {
+                            character.setStr(Integer.parseInt(strField.getText()));
+                        }
+                    }
+                    if (!String.valueOf(character.getDex()).equals(dexField.getText())) {
+                        if (validateAbilityScore("Dexterity", dexField.getText())) {
+                            character.setDex(Integer.parseInt(dexField.getText()));
+                        }
+                    }
+                    if (!String.valueOf(character.getCon()).equals(conField.getText())) {
+                        if (validateAbilityScore("Constitution", conField.getText())) {
+                            character.setCon(Integer.parseInt(conField.getText()));
+                        }
+                    }
+                }
+            }));
+
+            Button exit = new Button("Exit");
+            exit.setOnMouseClicked((new EventHandler<MouseEvent>() {
+                public void handle(MouseEvent event) {
+                    showCharacterListScene();
+                }
+            }));
+            buttonPane.getChildren().addAll(update, exit);
+        }
 
         FlowPane formPane = new FlowPane(Orientation.VERTICAL);
         formPane.getChildren().addAll(

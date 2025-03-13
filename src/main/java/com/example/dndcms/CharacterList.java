@@ -98,24 +98,14 @@ public class CharacterList {
      * return: List<Character>
      * purpose: Deletes Character from list
      */
-    public List<Character> deleteCharacter(String id) {
-        while (true) {
-            if (IPO.validateId(id)) {
-                int deleteId = Integer.parseInt(id);
-                boolean removed = characters.removeIf(character -> character.getId() == deleteId);
-                if (removed) {
-                    System.out.println("Character deleted and list updated");
-                    break;
-                } else {
-                    System.out.println("> ID not found, try again");
-                    id = IPO.inputAttribute("id");
-                }
-            } else {
-                id = IPO.inputAttribute("id");
+    public void deleteCharacter(String id) {
+        int deleteId = Integer.parseInt(id);
+        for (int i = 0; i < characters.size(); i++) {
+            if (characters.get(i).getId() == deleteId) {
+                characters.remove(i);
+                break;
             }
         }
-
-        return characters;
     }
 
     /**
