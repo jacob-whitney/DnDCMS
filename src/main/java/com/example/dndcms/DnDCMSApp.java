@@ -26,11 +26,6 @@ public class DnDCMSApp extends Application {
 
     @Override
     public void start(Stage primaryStage) throws IOException {
-        /*FXMLLoader fxmlLoader = new FXMLLoader(DnDCMSApp.class.getResource("dndcms-view.fxml"));
-        Scene scene = new Scene(fxmlLoader.load(), 320, 240);
-        primaryStage.setTitle("Hello!");
-        primaryStage.setScene(scene);
-        primaryStage.show();*/
 
         characterApp = new CharacterApp(primaryStage);
         characterApp.showCharacterListScene();
