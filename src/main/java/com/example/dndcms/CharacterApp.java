@@ -14,25 +14,23 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
-import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.Group;
 import javafx.scene.control.*;
 import javafx.scene.control.cell.PropertyValueFactory;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
-
 import java.io.File;
 import java.io.FileNotFoundException;
+import java.net.InetAddress;
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Scanner;
+import java.sql.*;
 
 import static com.example.dndcms.IPO.*;
 
@@ -44,6 +42,10 @@ public class CharacterApp {
     private static int sceneWidth = 1600;
     private static int sceneHeight = 900;
     private static TextFlow errorMessage = new TextFlow();
+    private static String ip;
+    private static String dbUsername;
+    private static String dbPassword;
+    private static boolean connected = false;
 
     // Constructors
     public CharacterApp(Stage primaryStage) {
@@ -68,7 +70,7 @@ public class CharacterApp {
 
     /**
      * method: showNewCharactersScene
-     * parameters: list
+     * parameters: none
      * return: void
      * purpose: Shows scene of new Character form
      */
@@ -92,6 +94,21 @@ public class CharacterApp {
         flowPane.getChildren().addAll(getHeader(), errorMessage, getImportForm());
         Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
         primaryStage.setTitle("Import Characters");
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    /**
+     * method: showConnectDBScene
+     * parameters: none
+     * return: void
+     * purpose: Shows scene of new Character form
+     */
+    public static void showConnectDBScene() {
+        FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
+        flowPane.getChildren().addAll(getHeader(), errorMessage, getDBForm());
+        Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
+        primaryStage.setTitle("Create New Character");
         primaryStage.setScene(scene);
         primaryStage.show();
     }
@@ -136,6 +153,7 @@ public class CharacterApp {
     public static void getStyles() {
         root.setStyle("-fx-font-size: 16px;");
     }
+
     /**
      * method: getHeader
      * parameters: none
@@ -143,9 +161,13 @@ public class CharacterApp {
      * purpose: Create elements for header of every scene
      */
     public static Text getHeader() {
-        Text title = new Text();
-        title.setText("Dungeons & Dragons\nCharacter Creator");
-        return title;
+        Text header = new Text();
+        if (connected == true) {
+            header.setText("Dungeons & Dragons\nCharacter Creator\n\nConnected to Database");
+        } else {
+            header.setText("Dungeons & Dragons\nCharacter Creator\n\nNo Database Connection Found");
+        }
+        return header;
     }
 
     /**
@@ -187,6 +209,12 @@ public class CharacterApp {
         tableView.getColumns().addAll(idColumn, nameColumn, classificationColumn, raceColumn, strColumn, dexColumn, conColumn);
         tableView.setItems(observableCharacterList);
 
+        Button connectDB = new Button("Connect to Database");
+        connectDB.setOnMouseClicked((new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent event) {
+                showConnectDBScene();
+            }
+        }));
         Button create = new Button("Create");
         create.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
@@ -232,7 +260,7 @@ public class CharacterApp {
         }));
 
         FlowPane buttonPane = new FlowPane(Orientation.HORIZONTAL);
-        buttonPane.getChildren().addAll(create, importing, update, delete);
+        buttonPane.getChildren().addAll(connectDB, create, importing, update, delete);
 
         FlowPane tablePane = new FlowPane(Orientation.VERTICAL);
         tablePane.getChildren().addAll(tableView, buttonPane);
@@ -327,8 +355,17 @@ public class CharacterApp {
                         int str = Integer.parseInt(strField.getText());
                         int dex = Integer.parseInt(dexField.getText());
                         int con = Integer.parseInt(conField.getText());
+                        String sql = "INSERT INTO characters VALUES (";
+                        sql += id + ", '";
+                        sql += name + "', '";
+                        sql += classification + "', '";
+                        sql += race + "', ";
+                        sql += str + ", ";
+                        sql += dex + ", ";
+                        sql += con + ")";
 
                         characterList.addCharacter(new Character(id, name, classification, race, str, dex, con));
+                        updateDB(ip, dbUsername, dbPassword, sql);
                         showCharacterListScene();
                     }
 
@@ -489,6 +526,89 @@ public class CharacterApp {
     }
 
     /**
+     * method: getDBForm
+     * parameters: list
+     * return: FlowPane
+     * purpose: Create form for getting Database
+     * connection details via user input
+     */
+    public static FlowPane getDBForm() {
+        Label ipAddressLabel = new Label("Server IP Address");
+        TextField ipAddressField = new TextField();
+        Label usernameLabel = new Label("Username");
+        TextField usernameField = new TextField();
+        Label passwordLabel = new Label("Password");
+        PasswordField passwordField = new PasswordField();
+
+        FlowPane buttonPane = new FlowPane(Orientation.HORIZONTAL);
+
+        // Submit connection to Database
+        Button connect = new Button("Connect");
+        connect.setOnMouseClicked((new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent event) {
+                errorMessage.getChildren().clear();
+                if (!passwordField.getText().equals("")) {
+                    if (validateIpAddress(ipAddressField.getText()) && validateUsername(usernameField.getText())) {
+                        ip = ipAddressField.getText();
+                        dbUsername = usernameField.getText();
+                        dbPassword = passwordField.getText();
+
+                        // Connect to server using credentials
+                        if (initialDBConnect(ip, dbUsername, dbPassword)) {
+                            String sql = """
+                                CREATE TABLE IF NOT EXISTS characters (
+                                    id INT PRIMARY KEY NOT NULL,
+                                    name VARCHAR(50) NOT NULL,
+                                    class VARCHAR(50),
+                                    race VARCHAR(50),
+                                    str INT,
+                                    dex INT,
+                                    con INT
+                                );""";
+                            updateDB(ip, dbUsername, dbPassword, sql);
+                            // Import 20 characters
+                            connected = true;
+                        } else {
+                            connected = false;
+                        }
+
+                        // Setup database using SQL file
+
+                        connected = true;
+                        // If successful, show character list scene
+                        showCharacterListScene();
+                    }
+                } else {
+                    Text emptyPassword = new Text("> Password field is empty. Please enter a valid password\n");
+                    errorMessage.getChildren().add(emptyPassword);
+                }
+            }
+        }));
+
+        Button cancel = new Button("Cancel");
+        cancel.setOnMouseClicked((new EventHandler<MouseEvent>() {
+            public void handle(MouseEvent event) {
+                showCharacterListScene();
+            }
+        }));
+
+        buttonPane.getChildren().addAll(connect, cancel);
+
+        FlowPane formPane = new FlowPane(Orientation.VERTICAL);
+        formPane.getChildren().addAll(
+                ipAddressLabel,
+                ipAddressField,
+                usernameLabel,
+                usernameField,
+                passwordLabel,
+                passwordField,
+                buttonPane
+        );
+
+        return formPane;
+    }
+
+    /**
      * method: getImportForm
      * parameters: none
      * return: MenuBar
@@ -575,6 +695,27 @@ public class CharacterApp {
         return formPane;
     }
 
+    /**
+     * method: initialDBConnect
+     * parameters: boolean
+     * return: ip, un, pw, query
+     * purpose: Using a server IP Address, username,
+     * password, and query, connect to the user's MySQL database
+     * and make updates
+     */
+    public static boolean initialDBConnect(String ip, String un, String pw) {
+        String jdbcAddress = "jdbc:mysql://" + ip + ":3306";
+        try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
+            Statement stmt = conn.createStatement();) {
+            stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS dndcms;");
+            return true;
+        } catch (SQLException e) {
+            Text noConnect = new Text("> Could not connect to database, try again");
+            errorMessage.getChildren().add(noConnect);
+            throw new RuntimeException(e);
+        }
+    }
+
     // Processor Methods
     /**
      * method: readFile
@@ -617,6 +758,48 @@ public class CharacterApp {
         int con = Integer.parseInt(attributes[6]);
 
         return new Character(id, name, classification, race, str, dex, con);
+    }
+
+    /**
+     * method: queryDB
+     * parameters: ResultSet
+     * return: ip, un, pw, query
+     * purpose: Using a server IP Address, username,
+     * password, and query, connect to the user's MySQL database
+     * and query for results
+     */
+    public static ResultSet queryDB(String ip, String un, String pw, String query) {
+        String jdbcAddress = "jdbc:mysql://" + ip + ":3306/dndcms";
+        try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery(query);) {
+            return rs;
+        } catch (SQLException e) {
+            Text noConnect = new Text("> Could not connect to database, try again");
+            errorMessage.getChildren().add(noConnect);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
+     * method: updateDB
+     * parameters: boolean
+     * return: ip, un, pw, query
+     * purpose: Using a server IP Address, username,
+     * password, and query, connect to the user's MySQL database
+     * and make updates
+     */
+    public static boolean updateDB(String ip, String un, String pw, String query) {
+        String jdbcAddress = "jdbc:mysql://" + ip + ":3306/dndcms";
+        try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
+            Statement stmt = conn.createStatement();) {
+            stmt.executeUpdate(query);
+            return true;
+        } catch (SQLException e) {
+            Text noConnect = new Text("> Could not connect to database, try again");
+            errorMessage.getChildren().add(noConnect);
+            throw new RuntimeException(e);
+        }
     }
 
     // Validation Methods
@@ -803,6 +986,48 @@ public class CharacterApp {
             return false;
         } else {
             return true;
+        }
+    }
+
+    /**
+     * method: validateIpAddress
+     * parameters: ipAddress
+     * return: boolean
+     * purpose: Confirms that IP Address is a valid
+     */
+      public static boolean validateIpAddress(String ipAddress) {
+        errorMessage.getChildren().clear();
+
+        try {
+            InetAddress.getByName(ipAddress);
+            return true;
+        } catch (Exception e) {
+            Text invIp = new Text("> Invalid IP Address: Cannot connect to \"" + ipAddress + "\". Please try again\n");
+            errorMessage.getChildren().add(invIp);
+            return false;
+        }
+    }
+
+    /**
+     * method: validateUsername
+     * parameters: username
+     * return: boolean
+     * purpose: Confirms that a username is a valid
+     */
+    public static boolean validateUsername(String username) {
+        errorMessage.getChildren().clear();
+
+        // Checks that username meets MySQL requirements
+        // - 1-32 characters long
+        // - No special character except '_' or '%'
+        // - No spaces
+        String regex = "^[a-zA-Z0-9_]{1,32}$";
+        if (username.matches(regex)) {
+            return true;
+        } else {
+            Text invUsername = new Text("> Invalid Username: \"" + username + "\" is not a valid MySQL username. Try again\n");
+            errorMessage.getChildren().add(invUsername);
+            return false;
         }
     }
 }
