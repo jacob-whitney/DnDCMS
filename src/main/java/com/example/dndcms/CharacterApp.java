@@ -122,9 +122,9 @@ public class CharacterApp {
     public static Text getHeader() {
         Text header = new Text();
         if (connected == true) {
-            header.setText("Dungeons & Dragons\nCharacter Creator\n\nConnected to Database");
+            header.setText("Dungeons & Dragons\nCharacter Creator\n\nConnected to Database\n\n");
         } else {
-            header.setText("Dungeons & Dragons\nCharacter Creator\n\nNo Database Connection Found");
+            header.setText("Dungeons & Dragons\nCharacter Creator\n\nNo Database Connection Found\n\n");
         }
         return header;
     }
@@ -490,7 +490,7 @@ public class CharacterApp {
     public static FlowPane getDBForm() {
         Text dbResetWarning = new Text();
         if (connected) {
-            dbResetWarning.setText("WARNING: Reconnecting to the same database server will reset all characters and any changes you made will be lost");
+            dbResetWarning.setText("WARNING: Reconnecting to\nthe same database server\nwill reset all characters\nand any changes you made\nwill be lost");
         }
         Label ipAddressLabel = new Label("Server IP Address");
         TextField ipAddressField = new TextField();
@@ -506,6 +506,7 @@ public class CharacterApp {
         connect.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
                 errorMessage.getChildren().clear();
+
                 if (!passwordField.getText().equals("")) {
                     if (validateIpAddress(ipAddressField.getText()) && validateUsername(usernameField.getText())) {
                         ip = ipAddressField.getText();
@@ -656,6 +657,7 @@ public class CharacterApp {
      * and make updates
      */
     public static boolean initialDBConnect(String ip, String un, String pw) {
+        errorMessage.getChildren().clear();
         String jdbcAddress = "jdbc:mysql://" + ip + ":3306";
         try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
             Statement stmt = conn.createStatement();) {
@@ -664,7 +666,8 @@ public class CharacterApp {
         } catch (SQLException e) {
             Text noConnect = new Text("> Could not connect to database, try again");
             errorMessage.getChildren().add(noConnect);
-            throw new RuntimeException(e);
+            System.out.println("Exception caught: " + e.getMessage());
+            return false;
         }
     }
 
@@ -677,6 +680,7 @@ public class CharacterApp {
      * and query for results
      */
     public static ResultSet queryDB(String query) {
+        errorMessage.getChildren().clear();
         String jdbcAddress = "jdbc:mysql://" + ip + ":3306/dndcms";
         try(Connection conn = DriverManager.getConnection(jdbcAddress, dbUsername, dbPassword);
             Statement stmt = conn.createStatement();
@@ -698,6 +702,7 @@ public class CharacterApp {
      * and make updates
      */
     public static boolean updateDB(String query) {
+        errorMessage.getChildren().clear();
         String jdbcAddress = "jdbc:mysql://" + ip + ":3306/dndcms";
         try(Connection conn = DriverManager.getConnection(jdbcAddress, dbUsername, dbPassword);
             Statement stmt = conn.createStatement();) {
@@ -706,7 +711,8 @@ public class CharacterApp {
         } catch (SQLException e) {
             Text noConnect = new Text("> Could not connect to database, try again");
             errorMessage.getChildren().add(noConnect);
-            throw new RuntimeException(e);
+            System.out.println("Exception caught: " + e.getMessage());
+            return false;
         }
     }
 
@@ -994,9 +1000,8 @@ public class CharacterApp {
      * return: boolean
      * purpose: Confirms that IP Address is a valid
      */
-      public static boolean validateIpAddress(String ipAddress) {
+    public static boolean validateIpAddress(String ipAddress) {
         errorMessage.getChildren().clear();
-
         try {
             InetAddress.getByName(ipAddress);
             return true;
@@ -1015,7 +1020,6 @@ public class CharacterApp {
      */
     public static boolean validateUsername(String username) {
         errorMessage.getChildren().clear();
-
         // Checks that username meets MySQL requirements
         // - 1-32 characters long
         // - No special character except '_' or '%'
