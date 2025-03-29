@@ -95,7 +95,7 @@ public class CharacterList {
     /**
      * method: deleteCharacter
      * parameters: id
-     * return: List<Character>
+     * return: void
      * purpose: Deletes Character from list
      */
     public void deleteCharacter(String id) {
@@ -106,6 +106,16 @@ public class CharacterList {
                 break;
             }
         }
+    }
+
+    /**
+     * method: deleteAllCharacters
+     * parameters: none
+     * return: void
+     * purpose: Deletes Character from list
+     */
+    public void deleteAllCharacters() {
+        characters.clear();
     }
 
     /**

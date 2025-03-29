@@ -191,8 +191,6 @@ public class CharacterApp {
                     Text noneSelected = new Text("> No character selected\n");
                     errorMessage.getChildren().add(noneSelected);
                 }
-
-
             }
         }));
         Button delete = new Button("Delete");
@@ -202,13 +200,13 @@ public class CharacterApp {
                 Character selectedChar = (Character) tableView.getSelectionModel().getSelectedItem();
                 if (selectedChar != null) {
                     String id = String.valueOf(selectedChar.getId());
+                    deleteCharInDB(selectedChar.getId());
                     characterList.deleteCharacter(id);
                     showCharacterListScene();
                 } else {
                     Text noneSelected = new Text("> No character selected\n");
                     errorMessage.getChildren().add(noneSelected);
                 }
-                //showDeleteCharacterScene();
             }
         }));
 
@@ -233,8 +231,6 @@ public class CharacterApp {
      * attributes via user input
      */
     public static FlowPane getCharacterForm(Character character) {
-        int originalId = character.getId();
-
         Label idLabel = new Label("ID");
         TextField idField = new TextField();
         Label nameLabel = new Label("Name");
@@ -349,7 +345,7 @@ public class CharacterApp {
                 case "Rogue":
                     classGroup.selectToggle(classRogRB);
                     break;
-                case "Sorcer":
+                case "Sorcerer":
                     classGroup.selectToggle(classSorcRB);
                     break;
                 case "Warlock":
@@ -492,6 +488,10 @@ public class CharacterApp {
      * connection details via user input
      */
     public static FlowPane getDBForm() {
+        Text dbResetWarning = new Text();
+        if (connected) {
+            dbResetWarning.setText("WARNING: Reconnecting to the same database server will reset all characters and any changes you made will be lost");
+        }
         Label ipAddressLabel = new Label("Server IP Address");
         TextField ipAddressField = new TextField();
         Label usernameLabel = new Label("Username");
@@ -514,7 +514,7 @@ public class CharacterApp {
 
                         // Connect to server using credentials
                         if (initialDBConnect(ip, dbUsername, dbPassword)) {
-                            String sql = """
+                            String createTable = """
                                 CREATE TABLE IF NOT EXISTS characters (
                                     id INT PRIMARY KEY NOT NULL,
                                     name VARCHAR(50) NOT NULL,
@@ -524,7 +524,12 @@ public class CharacterApp {
                                     dex INT,
                                     con INT
                                 );""";
-                            updateDB(sql);
+                            updateDB(createTable);
+
+                            // Clear characters table
+                            String clearTable = "DELETE FROM characters WHERE id > 0";
+                            updateDB(clearTable);
+                            characterList.deleteAllCharacters();
 
                             // Import start characters
                             ArrayList<String> startChars = getStartChars();
@@ -585,6 +590,7 @@ public class CharacterApp {
 
         FlowPane formPane = new FlowPane(Orientation.VERTICAL);
         formPane.getChildren().addAll(
+                dbResetWarning,
                 ipAddressLabel,
                 ipAddressField,
                 usernameLabel,
@@ -796,8 +802,7 @@ public class CharacterApp {
      * parameters: id, name, classification, race,
      * str, dex, con
      * return: boolean
-     * purpose: Import a character's attributes
-     * into the database
+     * purpose: Send insert query to database
      */
     public static boolean insertCharsToDB(int id, String name, String classification, String race, int str, int dex, int con) {
         String sql = "INSERT INTO characters VALUES (";
@@ -817,16 +822,31 @@ public class CharacterApp {
     }
 
     /**
-     * method: updatCharInDB
-     * parameters: id, name, classification, race,
-     * str, dex, con
+     * method: updateCharInDB
+     * parameters: id, attribute, value
      * return: boolean
-     * purpose: Import a character's attributes
-     * into the database
+     * purpose: Send update query to database
      */
     public static boolean updateCharInDB(int id, String attribute, String value) {
         String sql = "UPDATE characters SET ";
         sql += attribute + " = '" + value + "' ";
+        sql += "WHERE id = " + id;
+
+        if (updateDB(sql)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * method: deleteCharInDB
+     * parameters: id
+     * return: boolean
+     * purpose: Send delete query to database
+     */
+    public static boolean deleteCharInDB(int id) {
+        String sql = "DELETE FROM characters ";
         sql += "WHERE id = " + id;
 
         if (updateDB(sql)) {
