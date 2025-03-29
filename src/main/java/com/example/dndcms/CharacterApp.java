@@ -233,6 +233,8 @@ public class CharacterApp {
      * attributes via user input
      */
     public static FlowPane getCharacterForm(Character character) {
+        int originalId = character.getId();
+
         Label idLabel = new Label("ID");
         TextField idField = new TextField();
         Label nameLabel = new Label("Name");
@@ -393,39 +395,47 @@ public class CharacterApp {
                     errorMessage.getChildren().clear();
                     if (!String.valueOf(character.getId()).equals(idField.getText())) {
                         if (validateId(idField.getText())) {
+                            updateCharInDB(character.getId(), "id", idField.getText());
                             character.setId(Integer.parseInt(idField.getText()));
+
                         }
                     }
                     if (!character.getName().equals(nameField.getText())) {
                         if (validateName(nameField.getText())) {
                             character.setName(nameField.getText());
+                            updateCharInDB(Integer.parseInt(idField.getText()), "name", character.getName());
                         }
                     }
                     RadioButton classSelected = (RadioButton) classGroup.getSelectedToggle();
                     if (!character.getClassification().equals(classSelected.getText())) {
                         if (validateClass(classSelected.getText())) {
                             character.setClassification(classSelected.getText());
+                            updateCharInDB(Integer.parseInt(idField.getText()), "class", character.getClassification());
                         }
                     }
                     RadioButton raceSelected = (RadioButton) raceGroup.getSelectedToggle();
                     if (!character.getRace().equals(raceSelected.getText())) {
                         if (validateRace(raceSelected.getText())) {
                             character.setRace(raceSelected.getText());
+                            updateCharInDB(Integer.parseInt(idField.getText()), "race", character.getRace());
                         }
                     }
                     if (!String.valueOf(character.getStr()).equals(strField.getText())) {
                         if (validateAbilityScore("Strength", strField.getText())) {
                             character.setStr(Integer.parseInt(strField.getText()));
+                            updateCharInDB(Integer.parseInt(idField.getText()), "str", String.valueOf(character.getStr()));
                         }
                     }
                     if (!String.valueOf(character.getDex()).equals(dexField.getText())) {
                         if (validateAbilityScore("Dexterity", dexField.getText())) {
                             character.setDex(Integer.parseInt(dexField.getText()));
+                            updateCharInDB(Integer.parseInt(idField.getText()), "dex", String.valueOf(character.getDex()));
                         }
                     }
                     if (!String.valueOf(character.getCon()).equals(conField.getText())) {
                         if (validateAbilityScore("Constitution", conField.getText())) {
                             character.setCon(Integer.parseInt(conField.getText()));
+                            updateCharInDB(Integer.parseInt(idField.getText()), "con", String.valueOf(character.getCon()));
                         }
                     }
                 }
