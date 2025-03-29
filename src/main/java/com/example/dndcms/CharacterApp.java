@@ -38,7 +38,6 @@ public class CharacterApp {
     private static CharacterList characterList = new CharacterList();
     private static Stage primaryStage;
     private static Group root = new Group();
-    private ObservableList rootList = root.getChildren();
     private static int sceneWidth = 1600;
     private static int sceneHeight = 900;
     private static TextFlow errorMessage = new TextFlow();
@@ -84,21 +83,6 @@ public class CharacterApp {
     }
 
     /**
-     * method: showImportCharactersScene
-     * parameters: none
-     * return: void
-     * purpose: Shows scene of importing new characters
-     */
-    public static void showImportCharactersScene() {
-        FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.getChildren().addAll(getHeader(), errorMessage, getImportForm());
-        Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
-        primaryStage.setTitle("Import Characters");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
-
-    /**
      * method: showConnectDBScene
      * parameters: none
      * return: void
@@ -128,32 +112,7 @@ public class CharacterApp {
         primaryStage.show();
     }
 
-    /**
-     * method: showDeleteCharacterScene
-     * parameters: none
-     * return: void
-     * purpose: Shows scene of updating a character
-     */
-    public static void showDeleteCharacterScene() {
-        FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
-        flowPane.getChildren().addAll(getHeader());
-        Scene scene = new Scene(flowPane, sceneWidth, sceneHeight);
-        primaryStage.setTitle("Delete Character");
-        primaryStage.setScene(scene);
-        primaryStage.show();
-    }
-
     // Get Nodes
-    /**
-     * method: getStyles
-     * parameters: none
-     * return: void
-     * purpose: Get styles for all scenes
-     */
-    public static void getStyles() {
-        root.setStyle("-fx-font-size: 16px;");
-    }
-
     /**
      * method: getHeader
      * parameters: none
@@ -221,12 +180,6 @@ public class CharacterApp {
                 showNewCharacterScene();
             }
         }));
-        Button importing = new Button("Import");
-        importing.setOnMouseClicked((new EventHandler<MouseEvent>() {
-            public void handle(MouseEvent event) {
-                showImportCharactersScene();
-            }
-        }));
         Button update = new Button("Update");
         update.setOnMouseClicked((new EventHandler<MouseEvent>() {
             public void handle(MouseEvent event) {
@@ -260,7 +213,11 @@ public class CharacterApp {
         }));
 
         FlowPane buttonPane = new FlowPane(Orientation.HORIZONTAL);
-        buttonPane.getChildren().addAll(connectDB, create, importing, update, delete);
+        if (connected) {
+            buttonPane.getChildren().addAll(connectDB, create, update, delete);
+        } else {
+            buttonPane.getChildren().add(connectDB);
+        }
 
         FlowPane tablePane = new FlowPane(Orientation.VERTICAL);
         tablePane.getChildren().addAll(tableView, buttonPane);
@@ -355,17 +312,9 @@ public class CharacterApp {
                         int str = Integer.parseInt(strField.getText());
                         int dex = Integer.parseInt(dexField.getText());
                         int con = Integer.parseInt(conField.getText());
-                        String sql = "INSERT INTO characters VALUES (";
-                        sql += id + ", '";
-                        sql += name + "', '";
-                        sql += classification + "', '";
-                        sql += race + "', ";
-                        sql += str + ", ";
-                        sql += dex + ", ";
-                        sql += con + ")";
 
+                        insertCharsToDB(id, name, classification, race, str, dex, con);
                         characterList.addCharacter(new Character(id, name, classification, race, str, dex, con));
-                        updateDB(ip, dbUsername, dbPassword, sql);
                         showCharacterListScene();
                     }
 
@@ -565,18 +514,48 @@ public class CharacterApp {
                                     dex INT,
                                     con INT
                                 );""";
-                            updateDB(ip, dbUsername, dbPassword, sql);
-                            // Import 20 characters
+                            updateDB(sql);
+
+                            // Import start characters
+                            ArrayList<String> startChars = getStartChars();
+                            String charLine = "";
+                            for (int i = 0; i < startChars.size(); i++) {
+                                charLine = startChars.get(i);
+                                if (validateImportedString(charLine)) {
+                                    String[] attributes = charLine.split(", ");
+                                    if (
+                                            validateId(attributes[0]) &&
+                                            validateName(attributes[1]) &&
+                                            validateClass(attributes[2]) &&
+                                            validateRace(attributes[3]) &&
+                                            validateAbilityScore("Strength", attributes[4]) &&
+                                            validateAbilityScore("Dexterity", attributes[5]) &&
+                                            validateAbilityScore("Constitution", attributes[6])
+                                    ){
+                                        characterList.addCharacter(parseAttributesFromString(charLine));
+                                        insertCharsToDB(
+                                                Integer.parseInt(attributes[0]),
+                                                attributes[1],
+                                                attributes[2],
+                                                attributes[3],
+                                                Integer.parseInt(attributes[4]),
+                                                Integer.parseInt(attributes[5]),
+                                                Integer.parseInt(attributes[6])
+                                        );
+                                    } else {
+                                        Text invString = new Text("> for the following line:\n\t" + charLine + "\n");
+                                        errorMessage.getChildren().add(invString);
+                                    }
+                                } else {
+                                    Text invLine = new Text("> Exactly 7 attributes must be present, this line will be skipped:\n\t" + charLine + "\n");
+                                    errorMessage.getChildren().add(invLine);
+                                }
+                            }
                             connected = true;
+                            showCharacterListScene();
                         } else {
                             connected = false;
                         }
-
-                        // Setup database using SQL file
-
-                        connected = true;
-                        // If successful, show character list scene
-                        showCharacterListScene();
                     }
                 } else {
                     Text emptyPassword = new Text("> Password field is empty. Please enter a valid password\n");
@@ -695,27 +674,6 @@ public class CharacterApp {
         return formPane;
     }
 
-    /**
-     * method: initialDBConnect
-     * parameters: boolean
-     * return: ip, un, pw, query
-     * purpose: Using a server IP Address, username,
-     * password, and query, connect to the user's MySQL database
-     * and make updates
-     */
-    public static boolean initialDBConnect(String ip, String un, String pw) {
-        String jdbcAddress = "jdbc:mysql://" + ip + ":3306";
-        try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
-            Statement stmt = conn.createStatement();) {
-            stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS dndcms;");
-            return true;
-        } catch (SQLException e) {
-            Text noConnect = new Text("> Could not connect to database, try again");
-            errorMessage.getChildren().add(noConnect);
-            throw new RuntimeException(e);
-        }
-    }
-
     // Processor Methods
     /**
      * method: readFile
@@ -761,6 +719,27 @@ public class CharacterApp {
     }
 
     /**
+     * method: initialDBConnect
+     * parameters: boolean
+     * return: ip, un, pw, query
+     * purpose: Using a server IP Address, username,
+     * password, and query, connect to the user's MySQL database
+     * and make updates
+     */
+    public static boolean initialDBConnect(String ip, String un, String pw) {
+        String jdbcAddress = "jdbc:mysql://" + ip + ":3306";
+        try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
+            Statement stmt = conn.createStatement();) {
+            stmt.executeUpdate("CREATE DATABASE IF NOT EXISTS dndcms;");
+            return true;
+        } catch (SQLException e) {
+            Text noConnect = new Text("> Could not connect to database, try again");
+            errorMessage.getChildren().add(noConnect);
+            throw new RuntimeException(e);
+        }
+    }
+
+    /**
      * method: queryDB
      * parameters: ResultSet
      * return: ip, un, pw, query
@@ -768,9 +747,9 @@ public class CharacterApp {
      * password, and query, connect to the user's MySQL database
      * and query for results
      */
-    public static ResultSet queryDB(String ip, String un, String pw, String query) {
+    public static ResultSet queryDB(String query) {
         String jdbcAddress = "jdbc:mysql://" + ip + ":3306/dndcms";
-        try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
+        try(Connection conn = DriverManager.getConnection(jdbcAddress, dbUsername, dbPassword);
             Statement stmt = conn.createStatement();
             ResultSet rs = stmt.executeQuery(query);) {
             return rs;
@@ -783,15 +762,15 @@ public class CharacterApp {
 
     /**
      * method: updateDB
-     * parameters: boolean
-     * return: ip, un, pw, query
+     * parameters: query
+     * return: boolean
      * purpose: Using a server IP Address, username,
      * password, and query, connect to the user's MySQL database
      * and make updates
      */
-    public static boolean updateDB(String ip, String un, String pw, String query) {
+    public static boolean updateDB(String query) {
         String jdbcAddress = "jdbc:mysql://" + ip + ":3306/dndcms";
-        try(Connection conn = DriverManager.getConnection(jdbcAddress, un, pw);
+        try(Connection conn = DriverManager.getConnection(jdbcAddress, dbUsername, dbPassword);
             Statement stmt = conn.createStatement();) {
             stmt.executeUpdate(query);
             return true;
@@ -800,6 +779,83 @@ public class CharacterApp {
             errorMessage.getChildren().add(noConnect);
             throw new RuntimeException(e);
         }
+    }
+
+    /**
+     * method: insertCharstoDB
+     * parameters: id, name, classification, race,
+     * str, dex, con
+     * return: boolean
+     * purpose: Import a character's attributes
+     * into the database
+     */
+    public static boolean insertCharsToDB(int id, String name, String classification, String race, int str, int dex, int con) {
+        String sql = "INSERT INTO characters VALUES (";
+        sql += id + ", '";
+        sql += name + "', '";
+        sql += classification + "', '";
+        sql += race + "', ";
+        sql += str + ", ";
+        sql += dex + ", ";
+        sql += con + ")";
+
+        if (updateDB(sql)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * method: updatCharInDB
+     * parameters: id, name, classification, race,
+     * str, dex, con
+     * return: boolean
+     * purpose: Import a character's attributes
+     * into the database
+     */
+    public static boolean updateCharInDB(int id, String attribute, String value) {
+        String sql = "UPDATE characters SET ";
+        sql += attribute + " = '" + value + "' ";
+        sql += "WHERE id = " + id;
+
+        if (updateDB(sql)) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * method: getStartChars
+     * parameters: none
+     * return: ArrayList<String>
+     * purpose: Get ArrayList of start characters
+     */
+    public static ArrayList<String> getStartChars() {
+        ArrayList<String> fileData = new ArrayList<>();
+        fileData.add("1001, Thrain Ironfist, Barbarian, Dwarf, 18, 14, 16");
+        fileData.add("1002, Eldrin Moonshadow, Rogue, Elf, 12, 19, 10");
+        fileData.add("1003, Soren Blackflame, Warlock, Dragonborn, 15, 13, 9");
+        fileData.add("1004, Mira Willowbrook, Ranger, Halfling, 14, 17, 12");
+        fileData.add("1005, Orin Deepdelver, Fighter, Dwarf, 19, 10, 18");
+        fileData.add("1006, Sylas Starfire, Wizard, Elf, 10, 16, 8");
+        fileData.add("1007, Kaida Stormscale, Sorcerer, Dragonborn, 13, 18, 11");
+        fileData.add("1008, Finn Copperkettle, Rogue, Gnome, 9, 14, 7");
+        fileData.add("1009, Rowan Swiftblade, Fighter, Human, 17, 12, 14");
+        fileData.add("1010, Zephyr Duskrun, Ranger, Elf, 11, 19, 13");
+        fileData.add("1011, Baldric Stonehelm, Barbarian, Dwarf, 20, 12, 15");
+        fileData.add("1012, Lirien Dawnwhisper, Wizard, Elf, 8, 17, 6");
+        fileData.add("1013, Cassia Thornbrook, Warlock, Halfling, 14, 9, 10");
+        fileData.add("1014, Drogan Ashenmaw, Sorcerer, Dragonborn, 16, 15, 12");
+        fileData.add("1015, Jareth Windrider, Fighter, Human, 18, 11, 17");
+        fileData.add("1016, Elowen Lightfoot, Rogue, Halfling, 7, 16, 8");
+        fileData.add("1017, Magnus Ironbark, Warlock, Gnome, 13, 14, 10");
+        fileData.add("1018, Tavian Stormborn, Ranger, Human, 15, 18, 14");
+        fileData.add("1019, Brakka Flamebeard, Sorcerer, Dwarf, 17, 12, 15");
+        fileData.add("1020, Nyx Shadowvale, Wizard, Gnome, 10, 19, 7");
+
+        return fileData;
     }
 
     // Validation Methods
