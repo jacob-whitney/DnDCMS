@@ -1,4 +1,7 @@
 target/
+!target/reports/
+target/reports/*
+!target/reports/apidocs/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
