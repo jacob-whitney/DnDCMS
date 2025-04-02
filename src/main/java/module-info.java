@@ -1,3 +1,6 @@
+/**
+ * Description: requires external packages needed for application
+ */
 module com.example.dndcms {
     requires javafx.controls;
     requires javafx.fxml;

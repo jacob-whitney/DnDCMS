@@ -1,9 +1,8 @@
 /**
- * Jacob Whitney
  * Software Development I
- * February 23, 2025
- * Menu.java
- * --Description: Manages CLI menu and user interactions
+ * April 18, 2025
+ * IPO.java
+ * @author Jacob Whitney
  */
 
 package com.example.dndcms;
@@ -15,32 +14,19 @@ import java.util.Scanner;
 import java.util.ArrayList;
 import java.util.Random;
 
+/**
+ * Description: Manages CLI menu and user interactions
+ */
 public class IPO {
     private static final Scanner sc = new Scanner(System.in);
 
     // User Input Methods
     /**
-     * method: inputFilePath
-     * parameters: none
-     * return: String
-     * purpose: User inputs path to file they want to import
-     */
-    public static String inputFilePath() {
-        System.out.println("All rows in the file must follow the following format:");
-        System.out.println("ID, Name, Class, Race, Strength, Dexterity, Constitution");
-        System.out.println("For example: 1002, Eldrin Moonshadow, Rogue, Elf, 12, 19, 10");
-        System.out.println();
-        System.out.println("Enter the file path (ex. resources/chars.txt) you want to import");
-        System.out.print("Filepath: ");
-        return sc.nextLine();
-    }
-
-    /**
      * method: inputAttribute
-     * parameters: attribute
-     * return: String
      * purpose: User is instructed to input a specific
-     *          Character attribute
+     * Character attribute
+     * @param attribute Identifies which Character attribute will be input
+     * @return String that the user inputs
      */
     public static String inputAttribute(String attribute) {
         boolean loop = true;
@@ -100,81 +86,12 @@ public class IPO {
         return sc.nextLine();
     }
 
-    // Process Methods
-    /**
-     * method: readFile
-     * parameters: filepath
-     * return: ArrayList<String>
-     * purpose: Determine if passed filepath
-     *            is a valid file and if so,
-     *            read it into an ArrayList of
-     *            Strings
-     */
-    public static ArrayList<String> readFile(String filepath) {
-        ArrayList<String> data = new ArrayList<String>();
-        try {
-            Scanner scanner = new Scanner(new File(filepath));
-
-            while (scanner.hasNextLine()) {
-                data.add(scanner.nextLine());
-            }
-            scanner.close();
-        } catch (FileNotFoundException e) {
-            System.out.println("> File not found");
-        }
-        return data;
-    }
-
-    /**
-     * method: parseAttributesFromString
-     * parameters: line, list
-     * return: Character
-     * purpose: Parses a String from an imported file
-     *            into attributes and returns a new Character
-     */
-    public static Character parseAttributesFromString(String line, CharacterList list) {
-        String[] attributes = line.split(", ");
-        int id = 0;
-        if (getValidId(attributes[0], list)) {
-            id = Integer.parseInt(attributes[0]);
-        }
-        String name = getValidName(attributes[1], list);
-        String classification = getValidClassification(attributes[2]);
-        String race = getValidRace(attributes[3]);
-        int str = getValidAbilityScore("str", attributes[4]);
-        int dex = getValidAbilityScore("dex", attributes[5]);
-        int con = getValidAbilityScore("con", attributes[6]);
-
-        System.out.print(id + " | " + name + " | " + classification + " | ");
-        System.out.println(race + " |  " + str + "  |  " + dex + "  |  " + con);
-
-        return new Character(id, name, classification, race, str, dex, con);
-    }
-
     // Validation Methods
     /**
-     * method: validateImportedString
-     * parameters: line
-     * return: boolean
-     * purpose: Confirms that String from imported
-     *            file has 7 attributes exactly
-     */
-    public static boolean validateImportedString(String line) {
-        String[] data = line.split(", ");
-        if (data.length != 7) {
-            System.out.println("> Exactly 7 attributes must be present, this line will be skipped: ");
-            System.out.println("'" + line + "'");
-            return false;
-        } else {
-            return true;
-        }
-    }
-
-    /**
      * method: validateId
-     * parameters: id
-     * return: boolean
      * purpose: Confirms that ID is a valid integer
+     * @param id Unique integer that is being validated
+     * @return true or false if id is valid or not
      */
     public static boolean validateId(String id) {
         // Check that it's integer
@@ -194,10 +111,10 @@ public class IPO {
 
     /**
      * method: validateName
-     * parameters: name
-     * return: boolean
      * purpose: Confirms that name is not too short
-     *            or long
+     * or long
+     * @param name Unique String that is being validated
+     * @return true or false if name is valid or not
      */
     public static boolean validateName(String name) {
         if (name.length() < 2) {
@@ -212,10 +129,10 @@ public class IPO {
 
     /**
      * method: validateAbilityScore
-     * parameters: score
-     * return: boolean
      * purpose: Confirms that score is valid integer
-     *            between 3 and 20 inclusive
+     * between 3 and 20 inclusive
+     * @param score Integer that must be a valid ability score
+     * @return true or false if score is valid
      */
     public static boolean validateAbilityScore(String score) {
         try {
@@ -235,36 +152,14 @@ public class IPO {
         }
     }
 
-    /**
-     * method: checkIdExists
-     * parameters: id, list
-     * return: boolean
-     * purpose: Confirms passed ID exists in
-     *            current list
-     */
-    public static boolean checkIdExists(String id, CharacterList list) {
-        int intId = Integer.parseInt(id);
-        int listId = 0;
-        int listSize = list.getListSize();
-        if (listSize > 0) {
-            for (int i = 0; i < listSize; i++) {
-                listId = list.getCharacter(i).getId();
-                if (listId == intId) {
-                    return true;
-                }
-            }
-        }
-        System.out.println("> This ID does not exist in the Character list, try again");
-        return false;
-    }
-
     // Check for Duplication Methods
     /**
      * method: checkDuplicateIds
-     * parameters: id, list
-     * return: boolean
      * purpose: Checks that passed ID does not
-     *            exist in current list
+     * exist in current list
+     * @param id Unique integer being checked against all existing list IDs
+     * @param list CharacterList with IDs to be checked against new ID
+     * @return true or false if the new ID is unique or not
      */
     public static boolean checkDuplicateIds(String id, CharacterList list) {
         int intId = Integer.parseInt(id);
@@ -284,10 +179,11 @@ public class IPO {
 
     /**
      * method: checkDuplicateNames
-     * parameters: name, list
-     * return: boolean
      * purpose: Checks that passed name does not
-     *            exist in current list
+     * exist in current list
+     * @param name Unique String being checked against all existing list names
+     * @param list CharacterList with names to be checked against new name
+     * @return true or false if the new name is unique or not
      */
     public static boolean checkDuplicateNames(String name, CharacterList list) {
         String listName = "";
@@ -307,11 +203,12 @@ public class IPO {
     // Custom Get Methods
     /**
      * method: getValidId
-     * parameters: id, list
-     * return: int
-     * purpose: Returns ID value that has been
-     *            validated completely and is ready
-     *            to be submitted to new Character
+     * purpose: Returns true or false if
+     * ID value is validated completely and
+     * is ready to be submitted to new Character
+     * @param id Unique integer to be run through all ID validation
+     * @param list CharacterList to check new ID against
+     * @return true or false if ID passes all validation
      */
     public static boolean getValidId(String id, CharacterList list) {
         if (validateId(id)) {
@@ -327,11 +224,12 @@ public class IPO {
 
     /**
      * method: getValidName
-     * parameters: name, list
-     * return: String
      * purpose: Returns name value that has been
-     *            validated completely and is ready
-     *            to be submitted to a new Character
+     * validated completely and is ready
+     * to be submitted to a new Character
+     * @param name Unique String to be run through all name validation
+     * @param list CharacterList to check new name against
+     * @return String of name that is valid
      */
     public static String getValidName(String name, CharacterList list) {
         while (true) {
@@ -351,11 +249,11 @@ public class IPO {
 
     /**
      * method: getValidClassification
-     * parameters: classification
-     * return: String
      * purpose: Returns class value that has been
-     *            validated completely and is ready
-     *            to be submitted to a new Character
+     * validated completely and is ready
+     * to be submitted to a new Character
+     * @param classification Character class to be checked for validation
+     * @return String of class that is valid
      */
     public static String getValidClassification(String classification) {
         boolean loop = true;
@@ -399,11 +297,11 @@ public class IPO {
 
     /**
      * method: getValidRace
-     * parameters: race
-     * return: String
      * purpose: Returns race value that's
-     *            validated completely and ready
-     *            to submit to new Character
+     * validated completely and ready
+     * to submit to new Character
+     * @param race Character race to be checked for validation
+     * @return String of race that is valid
      */
     public static String getValidRace(String race) {
         boolean loop = true;
@@ -443,11 +341,12 @@ public class IPO {
 
     /**
      * method: getValidAbilityScore
-     * parameters: ability, score
-     * return: int
      * purpose: Returns ability score that's
-     *            validated completely and ready
-     *            to submit to a new Character
+     * validated completely and ready
+     * to submit to a new Character
+     * @param ability Identify which ability is being validated
+     * @param score Integer value to be checked for validation
+     * @return Score that is valid
      */
     public static int getValidAbilityScore(String ability, String score) {
         while (true) {
@@ -462,10 +361,9 @@ public class IPO {
 
     /**
      * method: getRandomAbilityScores
-     * parameters: none
-     * return: int
      * purpose: Generates random number between
-     *            3 and 20 inclusive
+     * 3 and 20 inclusive
+     * @return Score that is a random integer within valid constraints
      */
     public static int getRandomAbilityScore() {
         Random rand = new Random();
@@ -474,47 +372,10 @@ public class IPO {
 
     // Print Methods
     /**
-     * method: printMainMenu
-     * parameters: none
-     * return: String
-     * purpose: Prints main menu with instructions
-     */
-    public static String printMainMenu() {
-
-        return """
-        \s
-        Menu
-        ----------------------------------------------------------------
-        i - Import a file of Characters
-        p - Print a list of created Characters
-        c - Create a Character manually
-        d - Delete a Character
-        u - Update a Character
-        r - Roll random ability scores for a Character
-        q - Quit
-       \s
-        Enter the letter of the option you want to use:\s""";
-    }
-
-    /**
-     * method: printCharHeadings
-     * parameters: none
-     * return: String
-     * purpose: Prints label headings for
-     *            Character records
-     */
-    public static String printCharHeadings() {
-        return """
-        ID    | Name           | Class    | Race   | Str | Dex | Con
-        -----------------------------------------------------------------""";
-    }
-
-    /**
      * method: printAttributes
-     * parameters: none
-     * return: String
      * purpose: Prints available attributes
-     *            for user to select from
+     * for user to select from
+     * @return String of all attributes to be printed to the console
      */
     public static String printAttributes() {
         return """

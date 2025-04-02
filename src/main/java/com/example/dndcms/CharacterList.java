@@ -1,10 +1,8 @@
 /**
- * Jacob Whitney
  * Software Development I
- * March 12, 2025
+ * April 18, 2025
  * CharacterList.java
- * Description: manages list of Character objects
- * to be viewed or edited.
+ * @author Jacob Whitney
  */
 
 package com.example.dndcms;
@@ -14,16 +12,33 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Scanner;
 
+/**
+ * Description: manages list of Character objects
+ * to be viewed or edited.
+ */
 public class CharacterList {
     // Attributes
     private List<Character> characters;
     private static final Scanner sc = new Scanner(System.in);
 
     // Constructor
+
+    /**
+     * constructor: CharacterList
+     * purpose: initialize list object that
+     * contains Character objects
+     * @param characters List of created characters to be
+     *                   added to the CharacterList object
+     */
     public CharacterList(List<Character> characters) {
         this.characters = new ArrayList<>(characters);
     }
 
+    /**
+     * constructor: CharacterList
+     * purpose: initialize list object that
+     * does not contain any Character objects
+     */
     public CharacterList() {
         this.characters = new ArrayList<>();
     }
@@ -31,10 +46,10 @@ public class CharacterList {
     // Custom Methods
     /**
      * method: getCharacter
-     * parameters: index
-     * return: Character
      * purpose: Gets Character object
      *            by index number
+     * @param index Character's object index to be retrieved by
+     * @return Character identified by its object index
      */
     public Character getCharacter(int index) {
         if (!characters.isEmpty() && index >= 0 && index < characters.size()) {
@@ -46,36 +61,10 @@ public class CharacterList {
     }
 
     /**
-     * method: getCharacterList
-     * parameters: none
-     * return: String
-     * purpose: Prints existing list of Characters
-     */
-    public String getCharacterList() {
-        if (!characters.isEmpty()) {
-            String charList = "";
-            for (int i = 0; i < characters.size(); i++) {
-                Character c = characters.get(i);
-                charList = charList + c.getId()             + " | ";
-                charList = charList + c.getName()           + " | ";
-                charList = charList + c.getClassification() + " | ";
-                charList = charList + c.getRace() + " |  ";
-                charList = charList + c.getStr()            + "  |  ";
-                charList = charList + c.getDex()            + "  |  ";
-                charList = charList + c.getCon()            + "\n";
-            }
-            return charList;
-        } else {
-            return "List is empty";
-        }
-    }
-
-    /**
      * method: getListSize
-     * parameters: none
-     * return: int
      * purpose: Gets number of records
-     *            in Character list
+     * in Character list
+     * @return Integer showing size of list
      */
     public int getListSize() {
         return characters.size();
@@ -83,9 +72,9 @@ public class CharacterList {
 
     /**
      * method: addCharacter
-     * parameters: character
-     * return: List<Character>
      * purpose: Adds Character to list
+     * @param character Object to added to CharacterList
+     * @return CharacterList with new Character added
      */
     public List<Character> addCharacter( Character character) {
         characters.add(character);
@@ -94,9 +83,8 @@ public class CharacterList {
 
     /**
      * method: deleteCharacter
-     * parameters: id
-     * return: void
      * purpose: Deletes Character from list
+     * @param id Unique integer to identify Character to delete
      */
     public void deleteCharacter(String id) {
         int deleteId = Integer.parseInt(id);
@@ -110,8 +98,6 @@ public class CharacterList {
 
     /**
      * method: deleteAllCharacters
-     * parameters: none
-     * return: void
      * purpose: Deletes Character from list
      */
     public void deleteAllCharacters() {
@@ -120,10 +106,13 @@ public class CharacterList {
 
     /**
      * method: updateCharacter
-     * parameters: id, attribute, value, list
-     * return: List<Character>
      * purpose: Updates one attribute for
-     *            any Character in list
+     * any Character in list
+     * @param id Unique integer to identify Character
+     * @param attribute Character attribute to be updated
+     * @param value What will attribute be updated to
+     * @param list CharacterList to hold updated Character
+     * @return CharacterList that contains Character to be updated
      */
     public List<Character> updateCharacter(String id, String attribute, String value, CharacterList list) {
         for (Character c : characters) {

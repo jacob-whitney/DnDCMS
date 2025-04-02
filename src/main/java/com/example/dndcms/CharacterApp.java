@@ -1,10 +1,8 @@
 /**
- * Jacob Whitney
  * Software Development I
- * March 12, 2025
+ * April 18, 2025
  * CharacterApp.java
- * Description: contains attributes and methods for
- * managing JavaFX scenes for GUI
+ * @author Jacob Whitney
  */
 
 package com.example.dndcms;
@@ -12,7 +10,6 @@ package com.example.dndcms;
 // Imports
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Orientation;
 import javafx.scene.Group;
@@ -22,7 +19,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.FlowPane;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextFlow;
-import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import javafx.scene.Scene;
 import java.io.File;
@@ -32,8 +28,10 @@ import java.util.ArrayList;
 import java.util.Scanner;
 import java.sql.*;
 
-import static com.example.dndcms.IPO.*;
-
+/**
+ * Description: contains attributes and methods for
+ * managing JavaFX scenes for GUI
+ */
 public class CharacterApp {
     private static CharacterList characterList = new CharacterList();
     private static Stage primaryStage;
@@ -47,6 +45,13 @@ public class CharacterApp {
     private static boolean connected = false;
 
     // Constructors
+    /**
+     * constructor: CharacterApp
+     * purpose: manage JavaFX graphic user interface
+     * setting a primary stage for the whole Character
+     * application
+     * @param primaryStage JavaFX stage for setting various scenes
+     */
     public CharacterApp(Stage primaryStage) {
         this.primaryStage = primaryStage;
     }
@@ -54,8 +59,6 @@ public class CharacterApp {
     // Scene Show Methods
     /**
      * method: showCharactersListScene
-     * parameters: list
-     * return: void
      * purpose: Shows scene of list of characters
      */
     public static void showCharacterListScene() {
@@ -69,8 +72,6 @@ public class CharacterApp {
 
     /**
      * method: showNewCharactersScene
-     * parameters: none
-     * return: void
      * purpose: Shows scene of new Character form
      */
     public static void showNewCharacterScene() {
@@ -84,8 +85,6 @@ public class CharacterApp {
 
     /**
      * method: showConnectDBScene
-     * parameters: none
-     * return: void
      * purpose: Shows scene of new Character form
      */
     public static void showConnectDBScene() {
@@ -99,9 +98,8 @@ public class CharacterApp {
 
     /**
      * method: showUpdateCharacterScene
-     * parameters: list
-     * return: void
      * purpose: Shows scene of updating a character
+     * @param character Pass the Character that will be updated
      */
     public static void showUpdateCharacterScene(Character character) {
         FlowPane flowPane = new FlowPane(Orientation.VERTICAL);
@@ -115,9 +113,8 @@ public class CharacterApp {
     // Get Nodes
     /**
      * method: getHeader
-     * parameters: none
-     * return: Text
      * purpose: Create elements for header of every scene
+     * @return Text containing elements of the GUI header
      */
     public static Text getHeader() {
         Text header = new Text();
@@ -131,10 +128,9 @@ public class CharacterApp {
 
     /**
      * method: getCharacterTable
-     * parameters: none
-     * return: FlowPane
      * purpose: Create elements for list of characters
      * within a table
+     * @return FlowPane containing labels, fields, and buttons of Character table
      */
     public static FlowPane getCharacterTable() {
         errorMessage.getChildren().clear();
@@ -225,10 +221,10 @@ public class CharacterApp {
 
     /**
      * method: getCharacterForm
-     * parameters: list
-     * return: FlowPane
      * purpose: Create form for getting Character
      * attributes via user input
+     * @param character Character to be displayed in form
+     * @return FlowPane of elements making up Character form
      */
     public static FlowPane getCharacterForm(Character character) {
         Label idLabel = new Label("ID");
@@ -482,10 +478,9 @@ public class CharacterApp {
 
     /**
      * method: getDBForm
-     * parameters: list
-     * return: FlowPane
      * purpose: Create form for getting Database
      * connection details via user input
+     * @return FlowPane of form elements for connecting to a database
      */
     public static FlowPane getDBForm() {
         Text dbResetWarning = new Text();
@@ -607,10 +602,11 @@ public class CharacterApp {
     // Processor Methods
     /**
      * method: readFile
-     * parameters: file
-     * return: ArrayList<String>
      * purpose: Read a file into an ArrayList of
      * Strings
+     * @param file File object to be read into an ArrayList
+     * @return ArrayList of string lines that
+     * should represent different Characters
      */
     public static ArrayList<String> readFile(File file) {
         ArrayList<String> fileData = new ArrayList<String>();
@@ -629,10 +625,10 @@ public class CharacterApp {
 
     /**
      * method: parseAttributesFromString
-     * parameters: line
-     * return: Character
      * purpose: Parses a String from an imported file
-     *            into attributes and returns a new Character
+     * into attributes and returns a new Character
+     * @param line String from file to be parsed into separate attributes
+     * @return Character object with attributes that were parsed from String
      */
     public static Character parseAttributesFromString(String line) {
         String[] attributes = line.split(", ");
@@ -650,11 +646,13 @@ public class CharacterApp {
 
     /**
      * method: initialDBConnect
-     * parameters: boolean
-     * return: ip, un, pw, query
      * purpose: Using a server IP Address, username,
      * password, and query, connect to the user's MySQL database
      * and make updates
+     * @param ip is the IP Address of the MySQL server
+     * @param un is the username for the MySQL server
+     * @param pw is the password for the MySQL server
+     * @return true or false if the connection is successful or not
      */
     public static boolean initialDBConnect(String ip, String un, String pw) {
         errorMessage.getChildren().clear();
@@ -672,34 +670,12 @@ public class CharacterApp {
     }
 
     /**
-     * method: queryDB
-     * parameters: ResultSet
-     * return: ip, un, pw, query
-     * purpose: Using a server IP Address, username,
-     * password, and query, connect to the user's MySQL database
-     * and query for results
-     */
-    public static ResultSet queryDB(String query) {
-        errorMessage.getChildren().clear();
-        String jdbcAddress = "jdbc:mysql://" + ip + ":3306/dndcms";
-        try(Connection conn = DriverManager.getConnection(jdbcAddress, dbUsername, dbPassword);
-            Statement stmt = conn.createStatement();
-            ResultSet rs = stmt.executeQuery(query);) {
-            return rs;
-        } catch (SQLException e) {
-            Text noConnect = new Text("> Could not connect to database, try again");
-            errorMessage.getChildren().add(noConnect);
-            throw new RuntimeException(e);
-        }
-    }
-
-    /**
      * method: updateDB
-     * parameters: query
-     * return: boolean
      * purpose: Using a server IP Address, username,
      * password, and query, connect to the user's MySQL database
      * and make updates
+     * @param query String of MySQL query to be sent to database
+     * @return true or false if query updates database successfully or not
      */
     public static boolean updateDB(String query) {
         errorMessage.getChildren().clear();
@@ -718,10 +694,15 @@ public class CharacterApp {
 
     /**
      * method: insertCharstoDB
-     * parameters: id, name, classification, race,
-     * str, dex, con
-     * return: boolean
      * purpose: Send insert query to database
+     * @param id Unique integer to ID Character
+     * @param name Unique string to name Character
+     * @param classification Describe Character skills
+     * @param race Describe Character look and features
+     * @param str Character's skill level in strength
+     * @param dex Character's skill level in dexterity
+     * @param con Chracter's skill level in constitution
+     * @return true or false if Character is inserted into database or not
      */
     public static boolean insertCharsToDB(int id, String name, String classification, String race, int str, int dex, int con) {
         String sql = "INSERT INTO characters VALUES (";
@@ -742,9 +723,11 @@ public class CharacterApp {
 
     /**
      * method: updateCharInDB
-     * parameters: id, attribute, value
-     * return: boolean
      * purpose: Send update query to database
+     * @param id Unique integer of Character to be updated
+     * @param attribute Character attribute to be updated
+     * @param value What attribute will be updated to
+     * @return true or false if Character was updated or not
      */
     public static boolean updateCharInDB(int id, String attribute, String value) {
         String sql = "UPDATE characters SET ";
@@ -760,9 +743,9 @@ public class CharacterApp {
 
     /**
      * method: deleteCharInDB
-     * parameters: id
-     * return: boolean
      * purpose: Send delete query to database
+     * @param id Unique integer ID of Character to be deleted
+     * @return true or false if Character is deleted successfully
      */
     public static boolean deleteCharInDB(int id) {
         String sql = "DELETE FROM characters ";
@@ -777,9 +760,9 @@ public class CharacterApp {
 
     /**
      * method: getStartChars
-     * parameters: none
-     * return: ArrayList<String>
      * purpose: Get ArrayList of start characters
+     * @return ArrayList string of all Characters
+     * to be imported at start of database connection
      */
     public static ArrayList<String> getStartChars() {
         ArrayList<String> fileData = new ArrayList<>();
@@ -810,10 +793,10 @@ public class CharacterApp {
     // Validation Methods
     /**
      * method: validateImportedString
-     * parameters: line
-     * return: boolean
      * purpose: Confirms that String from imported
      * file has 7 attributes exactly
+     * @param line String from import file to be validated before processing
+     * @return true or false if line is valid or not
      */
     public static boolean validateImportedString(String line) {
         String[] data = line.split(", ");
@@ -826,9 +809,9 @@ public class CharacterApp {
 
     /**
      * method: validateId
-     * parameters: id
-     * return: boolean
      * purpose: Confirms that ID is a valid integer
+     * @param id Unique integer to identify Character
+     * @return true or false if id is valid or not
      */
     public static boolean validateId(String id) {
         int listId = 0;
@@ -864,9 +847,9 @@ public class CharacterApp {
 
     /**
      * method: validateName
-     * parameters: name
-     * return: boolean
      * purpose: Confirms that Name is a valid string
+     * @param name Unique String to identify Character
+     * @return true or false if name is valid or not
      */
     public static boolean validateName(String name) {
         String listName = "";
@@ -897,9 +880,9 @@ public class CharacterApp {
 
     /**
      * method: validateClass
-     * parameters: classification
-     * return: boolean
      * purpose: Confirms that Class is a valid string
+     * @param classification Describes skills of Character
+     * @return true or false if class is valid or not
      */
     public static boolean validateClass(String classification) {
         Text invClass = new Text("> Invalid Class: Choose Barbarian, Fighter, Ranger, Rogue, Sorcerer, Warlock, or Wizard\n");
@@ -923,9 +906,9 @@ public class CharacterApp {
 
     /**
      * method: validateRace
-     * parameters: race
-     * return: boolean
      * purpose: Confirms that Race is a valid string
+     * @param race Describes look and features of Character
+     * @return true or false if race is valid or not
      */
     public static boolean validateRace(String race) {
         Text invRace = new Text("> Invalid Race: Choose Dwarf, Dragonborn, Elf, Gnome, Halflin, or Human\n");
@@ -948,10 +931,11 @@ public class CharacterApp {
 
     /**
      * method: validateAbilityScore
-     * parameters: ability, score
-     * return: int
      * purpose: Confirms that Ability Score
      * is valid integer
+     * @param ability Determines which ability is being tested
+     * @param score Value of ability to be tested
+     * @return true or false if ability score is valid or not
      */
     public static boolean validateAbilityScore(String ability, String score) {
         Text nonInt = new Text("> Invalid " + ability + ": Please enter an integer\n");
@@ -977,10 +961,11 @@ public class CharacterApp {
 
     /**
      * method: validateToggleGroup
-     * parameters: attribute, toggleGroup
-     * return: boolean
      * purpose: Confirms that toggleGroups
      * have a radio button selected
+     * @param attribute Which attribute is being tested to make sure it's filled
+     * @param toggleGroup Which ToggleGroup to test that it's selected
+     * @return true or false if a form ToggleGroup was selected or not
      */
     public static boolean validateToggleGroup(String attribute, ToggleGroup toggleGroup) {
         Text unselected = new Text("> Invalid " + attribute + ": Please select one\n");
@@ -996,9 +981,9 @@ public class CharacterApp {
 
     /**
      * method: validateIpAddress
-     * parameters: ipAddress
-     * return: boolean
      * purpose: Confirms that IP Address is a valid
+     * @param ipAddress Address of MySQL server
+     * @return true or false if IP Address is valid or not
      */
     public static boolean validateIpAddress(String ipAddress) {
         errorMessage.getChildren().clear();
@@ -1014,9 +999,9 @@ public class CharacterApp {
 
     /**
      * method: validateUsername
-     * parameters: username
-     * return: boolean
      * purpose: Confirms that a username is a valid
+     * @param username String to be validated as MySQL username
+     * @return true or false if username is valid or not
      */
     public static boolean validateUsername(String username) {
         errorMessage.getChildren().clear();
